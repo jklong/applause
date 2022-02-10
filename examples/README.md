@@ -12,3 +12,23 @@ It then uses the `dispatch!` helper macro to parse and dispatch to the function.
 $ cargo run -q --example simple -- cmd1
 Doing cmd1
 ```
+
+## Attrs
+
+[attrs](attrs.rs) shows how attributes are passed through to be used as normal.
+This includes doc comments which can be used by `clap`.
+
+```console
+$ cargo run -q --example attrs
+attrs_example 
+
+USAGE:
+    attrs <SUBCOMMAND>
+
+OPTIONS:
+    -h, --help    Print help information
+
+SUBCOMMANDS:
+    cmd1    Subcommand 1
+    help    Print this message or the help of the given subcommand(s)
+```

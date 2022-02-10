@@ -17,24 +17,30 @@ mod kw {
 }
 
 #[derive(Debug, Parse)]
-pub(crate) struct StructDef {
+pub(crate) struct ParserDef {
+    #[call(Attribute::parse_outer)]
+    attrs: Vec<Attribute>,
+    ident: Ident,
+
     #[brace]
+    #[postfix(Token![;])]
     _brace_token: Brace,
+
     #[inside(_brace_token)]
     #[parse_terminated(Field::parse_named)]
     pub fields: Punctuated<Field, Token![,]>,
-    _semicolon: Token![;],
 }
 
 #[derive(Debug, Parse)]
 pub(crate) struct TraitArgs {
-    _trait_args: kw::trait_args,
+    #[prefix(kw::trait_args)]
+    #[postfix(Token![;])]
     #[paren]
     _paren: Paren,
+
     #[inside(_paren)]
     #[parse_terminated(FnArg::parse)]
     pub args: Punctuated<FnArg, Token![,]>,
-    __semi: Token![;],
 }
 
 #[derive(Debug, Parse)]
@@ -43,6 +49,7 @@ pub(crate) struct Commands {
     #[postfix(Token![;])]
     #[brace]
     _brace: Brace,
+
     #[inside(_brace)]
     #[parse_terminated(CmdHandler::parse)]
     commands: Punctuated<CmdHandler<Variant2>, Token![,]>,
@@ -174,8 +181,7 @@ impl CmdHandler<Variant2> {
 
 #[derive(Debug, Parse)]
 pub(crate) struct ClapArgsWithSubs {
-    ident_base: Ident,
-    struct_def: StructDef,
+    parser: ParserDef,
     #[peek(kw::trait_args)]
     trait_args: Option<TraitArgs>,
     commands: Commands,
@@ -228,23 +234,25 @@ impl Commands {
 
 impl ClapArgsWithSubs {
     fn struct_ident(&self) -> Ident {
-        format_ident!("{}Parser", self.ident_base)
+        format_ident!("{}Parser", self.parser.ident)
     }
 
     fn subcmd_enum_ident(&self) -> Ident {
-        format_ident!("{}Cmd", self.ident_base)
+        format_ident!("{}Cmd", self.parser.ident)
     }
 
     fn trait_ident(&self) -> Ident {
-        format_ident!("{}Run", self.ident_base)
+        format_ident!("{}Run", self.parser.ident)
     }
 
     fn parser_struct(&self) -> TokenStream {
         let name = self.struct_ident();
+        let attrs = &self.parser.attrs;
         let trait_ident = self.trait_ident();
-        let fields = self.struct_def.fields.clone().into_iter();
+        let fields = self.parser.fields.iter();
         quote! {
             #[derive(::applause::clap::Parser, Debug)]
+            #(#attrs)*
             pub struct #name<T>
             where T: ::applause::clap::Subcommand + #trait_ident  {
                 #[clap(subcommand)]
@@ -255,7 +263,7 @@ impl ClapArgsWithSubs {
     }
 
     fn type_alias(&self) -> TokenStream {
-        let name = &self.ident_base;
+        let name = &self.parser.ident;
         let subcmd_enum = self.subcmd_enum_ident();
         let struct_ident = self.struct_ident();
 

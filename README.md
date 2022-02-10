@@ -35,7 +35,6 @@ See [Examples](examples) for complete examples.
 > `(` [_FunctionParams_] `)`
 > `;`
 >
->
 > _Commands_ :\
 > &nbsp;&nbsp; `commands`&nbsp;
 > `{` _CommandDef_ <sup>+</sup> `}`
