@@ -16,7 +16,7 @@ macro_rules! dispatch {
         <$ty as ::clap::Parser>::parse().cmd.run($($args),*);
     };
     ($ty:ty) => {
-        dispatch_args!($ty => );
+        ::applause::dispatch_args!($ty => );
     };
 }
 
