@@ -1,5 +1,5 @@
 [package]
-name = "oxide-macros"
+name = "applause-proc-macros"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 derive-syn-parse = "0.1.5"
-enum_dispatch = "0.3.7"
 parse = "0.1.2"
 proc-macro2 = "1.0.36"
 quote = "1.0.15"
@@ -15,6 +14,6 @@ syn = { version = "1.0.86", features = ["full", "clone-impls", "extra-traits"] }
 
 [lib]
 proc-macro = true
-name = "oxide_macros"
+name = "applause_proc_macros"
 path = "lib.rs"
 
