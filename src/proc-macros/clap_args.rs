@@ -244,9 +244,9 @@ impl ClapArgsWithSubs {
         let trait_ident = self.trait_ident();
         let fields = self.struct_def.fields.clone().into_iter();
         quote! {
-            #[derive(::clap::Parser, Debug)]
+            #[derive(::applause::clap::Parser, Debug)]
             pub struct #name<T>
-            where T: ::clap::Subcommand + #trait_ident  {
+            where T: ::applause::clap::Subcommand + #trait_ident  {
                 #[clap(subcommand)]
                 pub cmd: T,
                 #(pub #fields),*
@@ -294,7 +294,7 @@ impl ClapArgsWithSubs {
         let enum_vars = self.commands.to_variants();
 
         quote! {
-                #[derive(::clap::Subcommand, Debug)]
+                #[derive(::applause::clap::Subcommand, Debug)]
                 pub enum #enum_ident {
                     #(#enum_vars),*
                 }

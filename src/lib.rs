@@ -1,5 +1,6 @@
-// Re-export the main proc macro
-pub use applause_proc_macros::clap_args_with_subcommands;
+// Re-export the main proc macro and clap
+pub use applause_proc_macros::clap_args_with_subcommands as applause;
+pub use clap;
 
 // Declarative helper macros
 #[macro_export]
