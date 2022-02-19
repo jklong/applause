@@ -67,8 +67,14 @@ The syntax of a _CommandDef_ is Rust-like but does not behave like any of the
 Rust syntactical constructs it resembles.
 
 The IDENTIFIER, _EnumItemTuple_ and _EnumItemStruct_ are used to generate an
-item in an `enum`. This `enum` is processed by `clap` via the `clap::Subcommand`
-derive macro to define the valid subcommands.
+item in an `enum`. This `enum` is processed by the `clap::Subcommand`
+derive macro and may take the same form as accepted by `clap`, i.e. struct items
+are parsed as `clap::Args` and tuple items are use to refer to a separate
+`clap::Args` struct. Any attributes on the items or struct fields are passed
+through appropriately.
+
+The optional _DispatchExpr_ construct is used to populate the generated
+dispatcher function.
 
 #### DispatchExpr
 
@@ -131,6 +137,10 @@ applause!{
         Foo(commands::Foo),
     };
 }
+
+fn main() {
+    dispatch!(Cli);
+}
 ```
 
 ```rust
@@ -145,6 +155,40 @@ applause!{
 ```
 
 ## Helper Macros
+
+`applause` ships several declarative macros to help with parsing and dispatch of
+commands.
+
+### dispatch
+
+The `dispatch!(T)` macro parses the command line using the given type `T` and
+immediately dispatches to the subcommand handler.
+
+```rust
+    let subcmd_result = dispatch_args!(Cli);
+```
+
+### dispatch_args
+
+The `dispatch_args!(T => args...)` macro parses the command line using the type
+`T` and dispatches to the handler along with the additional list of arguments
+provided.
+
+```rust
+    let subcmd_result = dispatch_args!(Cli => "arg1", "arg2");
+```
+
+This can be used to call the `run` function when it has additional parameters
+defined by the `dispatch_params {}` block.
+
+### parse_args
+
+The `parse_args!(T)` macro simply parses the command line with type `T` but does
+not perform any dispatch.
+
+```rust
+    let cli = parse_args!(Cli);
+```
 
 [Clap]: https://github.com/clap-rs/clap
 [RustReference]: https://doc.rust-lang.org/reference/notation.html

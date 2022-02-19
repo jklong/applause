@@ -16,7 +16,7 @@ mod kw {
     syn::custom_keyword!(commands);
 }
 
-#[derive(Debug, Parse)]
+#[derive(Debug, Parse, PartialEq)]
 pub(crate) struct ParserDef {
     #[call(Attribute::parse_outer)]
     attrs: Vec<Attribute>,
@@ -245,7 +245,7 @@ impl ClapArgsWithSubs {
         format_ident!("{}Run", self.parser.ident)
     }
 
-    fn parser_struct(&self) -> TokenStream {
+    pub(crate) fn parser_struct(&self) -> TokenStream {
         let name = self.struct_ident();
         let attrs = &self.parser.attrs;
         let trait_ident = self.trait_ident();
@@ -257,12 +257,12 @@ impl ClapArgsWithSubs {
             where T: ::applause::clap::Subcommand + #trait_ident  {
                 #[clap(subcommand)]
                 pub cmd: T,
-                #(pub #fields),*
+                #(#fields),*
             }
         }
     }
 
-    fn type_alias(&self) -> TokenStream {
+    pub(crate) fn type_alias(&self) -> TokenStream {
         let name = &self.parser.ident;
         let subcmd_enum = self.subcmd_enum_ident();
         let struct_ident = self.struct_ident();
@@ -272,7 +272,7 @@ impl ClapArgsWithSubs {
         }
     }
 
-    fn trait_args(&self) -> Punctuated<FnArg, Token![,]> {
+    pub(crate) fn trait_args(&self) -> Punctuated<FnArg, Token![,]> {
         let receiver: FnArg = syn::parse_str("&self").expect("Could not create reciever");
         let parsed_args = &self.trait_args;
         let empty: Punctuated<FnArg, Token![,]> = Punctuated::new();
@@ -287,7 +287,7 @@ impl ClapArgsWithSubs {
         args
     }
 
-    fn dispatch_trait(&self) -> TokenStream {
+    pub(crate) fn dispatch_trait(&self) -> TokenStream {
         let name = self.trait_ident();
         let args = self.trait_args();
         quote! {
@@ -297,7 +297,7 @@ impl ClapArgsWithSubs {
         }
     }
 
-    fn subcmd_enum(&self) -> TokenStream {
+    pub(crate) fn subcmd_enum(&self) -> TokenStream {
         let enum_ident = self.subcmd_enum_ident();
         let enum_vars = self.commands.to_variants();
 
@@ -309,7 +309,7 @@ impl ClapArgsWithSubs {
         }
     }
 
-    fn subcmd_impl(&self) -> TokenStream {
+    pub(crate) fn subcmd_impl(&self) -> TokenStream {
         let impls = self.commands.impls();
         let trait_ident = self.trait_ident();
         let trait_args = self.trait_args();
@@ -327,5 +327,116 @@ impl ClapArgsWithSubs {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use proc_macro2::Span;
+    use quote::quote;
+
+    use super::*;
+
+    #[test]
+    fn parserdef_empty() {
+        let tokens = quote! {
+            Test {};
+        };
+        let wanted = ParserDef {
+            attrs: vec![],
+            ident: Ident::new("Test", Span::call_site()),
+            _brace_token: Brace::default(),
+            fields: Punctuated::new(),
+        };
+
+        let got = syn::parse2::<ParserDef>(tokens).unwrap();
+
+        assert_eq!(wanted, got);
+    }
+
+    #[test]
+    fn parserdef_struct_attrs() {
+        let tokens = quote! {
+            #[test_attr]
+            Test {};
+        };
+
+        let attr = syn::parse_quote! {#[test_attr]};
+
+        let wanted = ParserDef {
+            attrs: vec![attr],
+            ident: Ident::new("Test", Span::call_site()),
+            _brace_token: Brace::default(),
+            fields: Punctuated::new(),
+        };
+
+        let got = syn::parse2(tokens).unwrap();
+
+        assert_eq!(wanted, got);
+    }
+
+    #[test]
+    fn parserdef_fields() {
+        let tokens = quote! {
+            Test {
+                test: String,
+            };
+        };
+
+        let mut fields = Punctuated::new();
+        let f = Field {
+            attrs: vec![],
+            vis: syn::Visibility::Inherited,
+            ident: Some(Ident::new("test", Span::call_site())),
+            colon_token: Some(Token![:](Span::call_site())),
+            ty: syn::parse_str("String").unwrap(),
+        };
+        fields.push(f);
+        fields.push_punct(syn::token::Comma::default());
+
+        let wanted = ParserDef {
+            attrs: vec![],
+            ident: Ident::new("Test", Span::call_site()),
+            _brace_token: syn::token::Brace::default(),
+            fields,
+        };
+
+        let got = syn::parse2(tokens).unwrap();
+
+        assert_eq!(wanted, got);
+    }
+
+    #[test]
+    fn parserdef_field_attrs() {
+        let tokens = quote! {
+            Test {
+                #[field_attr(ff)]
+                test: String,
+            };
+        };
+
+        let attr = syn::parse_quote! {#[field_attr(ff)]};
+        // TODO: Refactor to a helper
+        let mut fields = Punctuated::new();
+        let f = Field {
+            attrs: vec![attr],
+            vis: syn::Visibility::Inherited,
+            ident: Some(Ident::new("test", Span::call_site())),
+            colon_token: Some(Token![:](Span::call_site())),
+            ty: syn::parse_str("String").unwrap(),
+        };
+        fields.push(f);
+        fields.push_punct(syn::token::Comma::default());
+
+        let wanted = ParserDef {
+            attrs: vec![],
+            ident: Ident::new("Test", Span::call_site()),
+            _brace_token: syn::token::Brace::default(),
+            fields,
+        };
+
+        let got = syn::parse2(tokens).unwrap();
+
+        assert_eq!(wanted, got);
     }
 }

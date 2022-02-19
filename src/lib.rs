@@ -6,7 +6,7 @@ pub use clap;
 #[macro_export]
 macro_rules! dispatch_args {
     ($ty:ty => $($args:expr),*) => {
-        <$ty as ::clap::Parser>::parse().cmd.run($($args),*);
+        <$ty as ::applause::clap::Parser>::parse().cmd.run($($args),*);
     };
 }
 
@@ -23,6 +23,6 @@ macro_rules! dispatch {
 #[macro_export]
 macro_rules! parse_args {
     ($ty:ty) => {
-        <$ty as ::clap::Parser>::parse()
+        <$ty as ::applause::clap::Parser>::parse()
     };
 }
